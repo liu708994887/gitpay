@@ -1,0 +1,29 @@
+@charset "utf-8";
+/* CSS Document */
+body,a,p,span,strong,b,div,ul,li{ margin:0; padding:0; font-family:"微软雅黑"; font-size:12px; color:#333;}
+a:hover{ text-decoration:none;}
+ul,li{ list-style:none;}
+p{ float:left;}
+input{ float:left;}
+img{ border:0px;}
+
+.pay{ width:821px; height:410px; margin:160px auto 0 auto;}
+.pay_top{ width:817px; height:6px; background:#F30;}
+.pay_left{ float:left; width:360px; padding:5px; border-right:1px solid #999;}
+.pay_method{ width:350px; height:40px; padding:10px 5px; border-bottom:1px solid #999;}
+.pay_method strong{ float:left; line-height:40px; }
+label{ float:left; margin:0 2px;}
+label input{ float:left; line-height:40px; margin-top:14px;}
+.pay_amount{ width:350px; padding:10px 5px; margin-bottom:15px;}
+.pay_amount p{ line-height:32px;}
+.pay_amount input{ width:133px; height:32px; border:1px solid #F60; margin:0 5px; }
+.pay_right{ width:430px; float:right; padding:10px;}
+.pay_choice{ float:left;}
+.pay_choice ul li{ display:inline; float:left; margin:0 3px;}
+.pay_choice a{ display:block; width:43px; height:55px; padding:11px 45px; border:1px solid #7a582a; background:#fbefe5;}
+.pay_choice a.hover{ background: #F90;}
+.pay_choicef{ float:left; width:418px; height:240px; border:1px solid #7a582a; padding:20px 0; margin-top:20px; margin-left:3px;}
+.pay_choicef p{ float:left; width:418px; height:30px; line-height:30px; text-align:center; font-size:14px;}
+.pay_choicef p input{ width:205px; height:22px; margin-left:90px;}
+.pay_choicef a{ float:left; display:block; width:97px; height:36px; margin-left:148px; margin-top:10px;}
+.pay_choicef strong{ width:418px; float:left; height:50px; line-height:50px; margin-top:20px; font-size:26px; color:#18810e; text-align:center;}
