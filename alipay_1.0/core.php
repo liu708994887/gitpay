@@ -16,6 +16,8 @@ $pay = new Pay(new Config());
 
 switch ($action) {
     case 'brpay'://条码支付下单
+        $need_query = array('query' => 0);
+        return jsonResult('success', '下单成功，等待用户付款', $need_query); 
         //@tudo生成订单信息 
         $total_amount = (float)$_POST['total_amount'];
         $bar_code = trim($_POST['bar_code']);
@@ -24,20 +26,20 @@ switch ($action) {
             $res = $pay->brpay($order_info, $total_amount, $bar_code);
         } catch (Exception $e) {
             //关闭订单，记录错误原因$e->getMessage()
-            jsonResult('failed', '下单或支付失败');        
+            return jsonResult('failed', '下单或支付失败');        
         }
         $need_query = array('query' => 0);
         if ($res['response']['alipay']['result_code'] == 'ORDER_SUCCESS_PAY_SUCCESS') {
             //关闭订单，记录支付信息
-            jsonResult('success', '支付成功', $need_query); 
+            return jsonResult('success', '支付成功', $need_query); 
         } else if ($res['response']['alipay']['result_code'] == 'ORDER_SUCCESS_PAY_INPROCESS') {
             $need_query['query'] = 1; 
             $need_query['order_no'] = $res['out_trade_no'];
             $need_query['order_ts'] = $order_info['create_ts'];
-            jsonResult('success', '下单成功，等待用户付款', $need_query); 
+            return jsonResult('success', '下单成功，等待用户付款', $need_query); 
         } else {
             //关闭订单，记录错误原因
-            jsonResult('failed', '未知错误'); 
+            return jsonResult('failed', '未知错误'); 
         }
         break;
     case 'query'://查询
