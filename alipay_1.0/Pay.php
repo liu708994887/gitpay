@@ -10,6 +10,7 @@ class Pay {
     //条码支付接口
     public function brpay($order_info, $total_amount, $bar_code) {
         $parameter = $this->assemblebrpayApiParams($order_info, $total_amount, $bar_code);
+        //print_r($parameter);exit;
         $xml_res = $this->getHttpResponsePOST($parameter);
         if (! $xml_res) {
             throw new Exception('接口异常，请检查'); 
@@ -23,13 +24,14 @@ class Pay {
             throw new Exception('下单或支付失败：' . var_export($res_arr, true)); 
         }
 
-        return $result_code;
+        return $res_arr;
     }
 
     //拼装条码支付接口参数
     private function assemblebrpayApiParams($order_info, $total_amount, $bar_code) {
         $parameter = array();
-        $parameter = array_merge($parameter, $this->getSystemParameter());
+        $parameter = array_merge($parameter, $this->getSystemParameter('brpay'));
+        $parameter['notify_url'] = $this->config->get('notify_url');
         $parameter['out_trade_no'] = $order_info['order_no'];
         $parameter['subject'] = $order_info['order_name'];
         $parameter['total_fee'] = $total_amount;
@@ -37,6 +39,7 @@ class Pay {
         $parameter['seller_email'] = $this->config->get('seller_email');
         //----业务相关，这里可以自定义
         $parameter['body'] = '支付宝条码支付';
+        /*
         $parameter['goods_detail'] = json_encode(array(
             'goods_id' => 'apply-01',
             'goods_name' => 'iphone',
@@ -44,6 +47,7 @@ class Pay {
             'price' => '0.01',
             'quantity' => 1
         ));
+         */
         $parameter['it_b_pay'] = TIMEOUT_ALIPAY;//支付超时时间
         //----
         $parameter['dynamic_id_type'] = 'bar_code';
@@ -71,13 +75,13 @@ class Pay {
             throw new Exception('查询失败：' . var_export($res_arr, true)); 
         }
 
-        return $result_code;
+        return $res_arr;
     }
 
     //拼装查询接口参数 
     private function assemblequeryApiParams($order_no) {
         $parameter = array();
-        $parameter = array_merge($parameter, $this->getSystemParameter());
+        $parameter = array_merge($parameter, $this->getSystemParameter('query'));
         $parameter['out_trade_no'] = $order_no;
         //签名
         $parameter['sign'] = $this->generateSign($parameter);
@@ -87,11 +91,16 @@ class Pay {
     }
 
     //获取系统参数 
-    private function getSystemParameter() {
+    private function getSystemParameter($action) {
         $sys_para = array(); 
-        $sys_para['service'] = 'alipay.acquire.query';
+        if ($action == 'brpay') {
+            $sys_para['service'] = 'alipay.acquire.createandpay';
+        } else if ($action == 'query') {
+            $sys_para['service'] = 'alipay.acquire.query';
+        }
         $sys_para['partner'] = $this->config->get('partner');
         $sys_para['_input_charset'] = $this->config->get('input_charset');
+        $sys_para['notify_url'] = $this->config->get('notify_url');
         
         return $sys_para;
     }
@@ -139,6 +148,72 @@ class Pay {
 
         return json_decode(json_encode($xml_obj), true);
     }
+
+    public function notifyDeal() {
+        $notify_data = $_POST;
+        $verify_res = $this->verifyNotice($notify_data);  
+        if (! $verify_res) {
+            return false; 
+        }
+        $this->writeOrderLog(0, $notify_data); 
+    }
+
+    //异步通知验证
+    private function verifyNotice($notify_data) {
+        if (empty($notify_data)) {
+            return false;
+        }
+        //验证签名
+        $my_sign = $this->generateSign($notify_data);
+        $is_sign = ($notify_data['sign'] == $my_sign); 
+        //验证是否是支付宝发来的消息
+        $responseTxt = 'true';
+        if (! empty($notify_data["notify_id"])) {
+            $responseTxt = $this->getHttpResponseGET($notify_data["notify_id"]);
+        }
+        if (preg_match("/true$/i",$responseTxt) && $isSign) {
+            return true;  
+        } else {
+            return false; 
+        }
+    }
+
+    public function getHttpResponseGET($notify_id) {
+        $transport = $this->config->get('transport'); 
+        $partner = $this->config->get('partner');
+        $cacert = $this->config->get('cacert');
+        $url = $transport == 'https' ? $this->config->get('https_verify_url') : $this->config->get('http_verify_url');
+        $url .= 'partner=' . $partner . '&notify_id=' . $notify_id;
+        $curl = curl_init($url);
+        curl_setopt($curl, CURLOPT_HEADER, 0 ); // 过滤HTTP头
+        curl_setopt($curl,CURLOPT_RETURNTRANSFER, 1);// 显示输出结果
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);//SSL证书认证
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);//严格认证
+        curl_setopt($curl, CURLOPT_CAINFO,$cacert);//证书地址
+        $responseText = curl_exec($curl);
+        //var_dump( curl_error($curl) );//如果执行curl过程中出现异常，可打开此开关，以便查看异常内容
+        curl_close($curl);
+        
+        return $responseText;
+    }
+
+    public function writeOrderLog($order_no, $content) {
+        $log_file = $this->getOrderLogFile($order_no);
+        return file_put_contents($log_file, json_encode($content));
+    } 
+
+    public function readOrderLog($order_no) {
+        $log_file = $this->getOrderLogFile($order_no); 
+        $content = file_get_contents($log_file);
+        return $content ? json_decode($content, true) : '';
+    }
+
+    private function getOrderLogFile($order_no) {
+        $log_dir = rtrim($this->config->get('order_log_dir'), '/');  
+        return $log_dir . '/' . $order_no;
+    }
+
+
 
 
 

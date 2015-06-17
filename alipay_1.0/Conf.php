@@ -1,4 +1,6 @@
 <?php
+$config['partner']		= '2088911202472956';
+$config['key']			= '4jg2gy3hfngief26kzrxm3z90bo06ob3';
 //签名方式 不需修改
 $config['sign_type']    = strtoupper('MD5');
 //字符编码格式 目前支持 gbk 或 utf-8
@@ -11,3 +13,9 @@ $config['transport']    = 'http';
 //访问网关
 $config['gate_way_url'] = 'https://mapi.alipay.com/gateway.do?';
 $config['seller_email'] = 'qqqlu000@163.com';
+//订单log目录
+$config['order_log_dir'] = getcwd() . '/log';
+//notify_url
+$config['notify_url'] = 'http://120.25.233.191/gitpay/alipay_1.0/core.php?action=notify';
+$config['https_verify_url'] = 'https://mapi.alipay.com/gateway.do?service=notify_verify&';
+$config['http_verify_url'] = 'http://notify.alipay.com/trade/notify_query.do?';
