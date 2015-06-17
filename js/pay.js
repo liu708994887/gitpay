@@ -7,7 +7,7 @@ $(function() {
         set('m_zl0',1,3);
         $('#bar_code').focus();
     }); 
-    $('#barcode_submit').on('click', function(e) {
+    $('body').on('click', '#barcode_submit', function(e) {
         e.preventDefault(); 
         var o = {};
         o.pay_type = $("input[name='pay_type']:checked").val(); 
@@ -25,23 +25,44 @@ $(function() {
             alert('请填写条形码数据');
             return false;
         }
-        o.action = 'brpay';
         var pay_res = barCodePay(o);
     });
     function barCodePay(data) {
-        var url = data.pay_type == 'alipay' ? 'alipay_1.0/core.php' : '';
         $.ajax({
-            url : url, 
+            url : 'alipay_1.0/core.php?action=brpay', 
             type : 'POST',
             data : data,
             dataType : 'json',
-            success : 'afterBarCodePay'
-        }).always(function() {
-            $('#bar_code').html('处理中...').next().text('下单处理中'); 
+            success : afterBarCodePay
+        }).done(function() {
+            $('#barcode_submit').remove(); 
+            $('#barcode_tip').text('下单处理中'); 
         });
     }
     function afterBarCodePay(resp) {
-        console.debug(resp); 
+        $('#barcode_tip').text(resp.message);
+        if (resp.status == 'success') {
+            if (resp.data.query == 1) {
+                var data = {order_no : resp.data.order_no, order_ts : resp.data.order_ts};
+                var bar_code_query = setInterval(function() {
+                    $.ajax({
+                        url : 'alipay_1.0/core.php?action=query', 
+                        type : 'GET',
+                        data : data,
+                        dataType : 'json',
+                        success : function(res) {
+                            $('#barcode_tip').text(res.message);  
+                            if (res.status == 'failed' || res.data.query == 0) {
+                                clearInterval(bar_code_query);
+                                $('#bar_code').val('');
+                                $('#total_amount').val('').focus();
+                                $('#barcode_tip').before('<a href="#" id="barcode_submit"><img src="images/zf_30.jpg" width="97" height="36"/></a>');
+                            }
+                        } 
+                    });
+                }, 5000);                 
+            }
+        } 
         return false;
     }
     function isEmpty(value) {
