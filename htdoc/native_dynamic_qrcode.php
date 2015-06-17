@@ -96,6 +96,7 @@
         if(<?php echo $unifiedOrderResult["code_url"] != NULL; ?>)
         {
             var url = "<?php echo $code_url;?>";
+            var url = "我试谁";
             //参数1表示图像大小，取值范围1-10；参数2表示质量，取值范围'L','M','Q','H'
             var qr = qrcode(10, 'M');
             qr.addData(url);
